@@ -1,7 +1,3 @@
-import {
-  postgresEndpoint
-} from './settings';
-
 import express from 'express';
 const app = express();
 
@@ -10,8 +6,6 @@ import v1Router from './routes/v1';
 
 import bodyParser from 'body-parser';
 import compression from 'compression';
-
-import { Pool } from "pg";
 
 if (process.env.NODE_ENV !== 'test') {
   app.use(compression());
