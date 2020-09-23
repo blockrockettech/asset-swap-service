@@ -6,5 +6,13 @@ import app from '../src';
 chai.use(sinonChai);
 export const { expect } = chai;
 export const server = supertest.agent(app);
-export const BASE_URL = '/v1';
+
+// URL exports
 export const INFO_URL = '/';
+export function base_url(chainId) {
+    return `/v1/network/${chainId}`;
+}
+
+export function quote_url(chainId) {
+    return `${base_url(chainId)}/quote`
+}

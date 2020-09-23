@@ -1,10 +1,13 @@
 const swap = require('express').Router({mergeParams: true});
 
-swap.get('/', async (req, res, next) => {
+import Quote from "../../../models/Quote";
+
+swap.get('/:quoteId', async (req, res, next) => {
+    const {quoteId} = req.params;
     return res
         .status(200)
         .json({
-            hello: 'world'
+            msg: `Processing swap for quote ID [${quoteId}]`
         });
 });
 

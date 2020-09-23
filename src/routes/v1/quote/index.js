@@ -7,6 +7,7 @@ import {v4 as uuidv4} from 'uuid';
 import Quote from "../../../models/Quote";
 
 quote.post('/', async (req, res, next) => {
+    const { chainId } = req.params;
     const {channelId, input, output, amount} = req.body;
 
     // Generate a quote
@@ -18,6 +19,7 @@ quote.post('/', async (req, res, next) => {
     await Quote.addQuote(
         quoteId,
         channelId,
+        chainId,
         input,
         output,
         amount,
@@ -38,10 +40,11 @@ quote.post('/', async (req, res, next) => {
 });
 
 quote.get('/allQuotes', async (req, res, next) => {
+    const { chainId } = req.params;
     return res
         .status(200)
         .json({
-            quotes: await Quote.getAll()
+            quotes: await Quote.getAll(chainId)
         });
 });
 

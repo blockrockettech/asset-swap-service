@@ -15,7 +15,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
 
 app.use('/', infoRouter);
-app.use('/v1', v1Router);
+app.use('/v1/network/:chainId', v1Router);
 
 // Default error handler for all routes
 app.use((err, req, res, next) => {

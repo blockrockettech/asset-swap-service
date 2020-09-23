@@ -7,16 +7,16 @@ class Quote {
         this.pool.on('error', (err, client) => `Error, ${err}, on idle client${client}`);
     }
 
-    async getAll() {
-        const queryResult = await this.pool.query(`SELECT * FROM ${this.table}`);
+    async getAll(chainId) {
+        const queryResult = await this.pool.query(`SELECT * FROM ${this.table} WHERE chain_id = ${chainId}`);
         return queryResult.rows;
     }
 
-    async addQuote(quoteId, channelId, input, output, amount, fee) {
+    async addQuote(quoteId, channelId, chainId, input, output, amount, fee) {
         return this.pool.query(
             `
-                INSERT INTO quote(quote_id, channel_id, input, output, amount, fee)
-                VALUES('${quoteId}', '${channelId}', '${input}', '${output}', ${amount}, ${fee})
+                INSERT INTO quote(quote_id, channel_id, chain_id, input, output, amount, fee)
+                VALUES('${quoteId}', '${channelId}', ${chainId}, '${input}', '${output}', ${amount}, ${fee})
             `
         );
     }
