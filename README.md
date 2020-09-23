@@ -1,6 +1,6 @@
 # asset-swap-service
 
-## Run
+## Running the api
 
 First install dependencies
 
