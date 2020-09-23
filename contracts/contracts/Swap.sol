@@ -1,22 +1,24 @@
 pragma solidity 0.6.12;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./MockERC20.sol";
 
 contract Swap {
-    IERC20 tokenA;
-    IERC20 tokenB;
+    IERC20 public tokenA;
+    IERC20 public tokenB;
 
-    constructor(IERC20 _tokenA, IERC20 _tokenB, uint256 _liquidityToEscrow) public {
-        tokenA = _tokenA;
-        tokenB = _tokenB;
+    constructor() public {
+        // Each contract will mint 1m tokens on construction
+        tokenA = new MockERC20("FakeDAI", "DAI");
+        tokenB = new MockERC20("FakexDAI", "xDAI");
 
-        // bring in liquidity
-        address self = address(this);
-        tokenA.transferFrom(msg.sender, self, _liquidityToEscrow);
-        tokenB.transferFrom(msg.sender, self, _liquidityToEscrow);
+        // give sender some tokens to trade
+        uint256 _liquidityToSend = 250000000000000000000000; // 250k tokens
+        tokenA.transfer(msg.sender, _liquidityToSend);
+        tokenB.transfer(msg.sender, _liquidityToSend);
     }
 
-    function swap(IERC20 _input, uint256 _amount) external {
+    function swap(IERC20 _input, uint256 _amount, address _beneficiary) external {
         // make sure input is one of the tokens we have
         address inputAddress = address(_input);
         bool isTokenA = inputAddress == address(tokenA);
@@ -30,7 +32,7 @@ contract Swap {
         require(output.balanceOf(self) >= _amount, "not enough output");
 
         // swap the tokens
-        _input.transferFrom(msg.sender, self, _amount);
-        output.transfer(msg.sender, _amount);
+        _input.transferFrom(_beneficiary, self, _amount);
+        output.transfer(_beneficiary, _amount);
     }
 }
