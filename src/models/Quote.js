@@ -3,20 +3,22 @@ import { pool } from './pool';
 class Quote {
     constructor() {
         this.pool = pool;
-        this.table = 'quotes';
+        this.table = 'quote';
         this.pool.on('error', (err, client) => `Error, ${err}, on idle client${client}`);
     }
 
-    async select(columns, clause) {
-        let query = `SELECT ${columns} FROM ${this.table}`;
-        if (clause) {
-            query = `
-                ${query}
-                WHERE ${clause}
-            `
-        }
+    async getAll() {
+        const queryResult = await this.pool.query(`SELECT * FROM ${this.table}`);
+        return queryResult.rows;
+    }
 
-        return this.pool.query(query);
+    async addQuote(quoteId, channelId, input, output, amount, fee) {
+        return this.pool.query(
+            `
+                INSERT INTO quote(quote_id, channel_id, input, output, amount, fee)
+                VALUES('${quoteId}', '${channelId}', '${input}', '${output}', ${amount}, ${fee})
+            `
+        );
     }
 }
 
