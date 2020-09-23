@@ -1,5 +1,6 @@
 import { sinon, expect, server, quote_url } from '../../../setup';
 import Quote from "../../../../src/models/Quote";
+import FeeService from "../../../../src/services/FeeService";
 
 describe('Quote route tests', () => {
     afterEach(function () {
@@ -64,10 +65,13 @@ describe('Quote route tests', () => {
                    const {id, ...quoteDetails} = quote;
                    const uuidV4RegEx = /^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i;
                    expect(uuidV4RegEx.test(id)).to.be.true; // ID is a valid v4 UUID
-                   // expect(quoteDetails).to.be.deep.equal({
-                   //     fee,
-                   //     outputAfterFee
-                   // });
+
+                   const fee = FeeService.getDAISwapFee(amount);
+                   const outputAfterFee = parseFloat(amount) - fee;
+                   expect(quoteDetails).to.be.deep.equal({
+                       fee,
+                       outputAfterFee
+                   });
 
                    done();
                });
