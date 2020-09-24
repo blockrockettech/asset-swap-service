@@ -85,7 +85,8 @@ export default new class kChannelService {
         return {
             id: uuidv4(),
             fee,
-            outputAfterFee
+            outputAfterFee,
+            success: true,
         };
     }
 

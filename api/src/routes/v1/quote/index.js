@@ -9,13 +9,22 @@ quote.post('/', async (req, res, next) => {
     const { chainId } = req.params;
     const { channelId, input, output, amount } = req.body;
 
-    const { id, fee, outputAfterFee } = await kChannelService.getQuote(
+    const { quoteSuccess, ...quoteDetailsOrError } = await kChannelService.getQuote(
         5777,
         channelId,
         input,
         output,
         amount
     );
+
+    if (!quoteSuccess) {
+        return res.status(500)
+            .json({
+                ...quoteDetailsOrError
+            });
+    }
+
+    const { id, fee, outputAfterFee } = quoteDetailsOrError;
 
     // Persist the quote with associated request details
     await Quote.addQuote(
