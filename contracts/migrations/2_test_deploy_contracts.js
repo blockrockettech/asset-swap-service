@@ -22,10 +22,14 @@ module.exports = async function (deployer, network, accounts) {
     const swap = await Swap.deployed();
 
     console.log('Approve Swap to spend DAI')
-    const dai = await MockERC20.at(await swap.tokenA());
+    const tokenAAddress = await swap.tokenA();
+    console.log('DAI token address', tokenAAddress);
+    const dai = await MockERC20.at(tokenAAddress);
     await dai.approve(Swap.address, '250000000000000000000000', {from: admin}); // 250k tokens
 
     console.log('Approve Swap to spend xDAI')
-    const xDai = await MockERC20.at(await swap.tokenB());
+    const tokenBAddress = await swap.tokenB();
+    console.log('xDAI token address', tokenBAddress);
+    const xDai = await MockERC20.at(tokenBAddress);
     await xDai.approve(Swap.address, '250000000000000000000000', {from: admin}); // 250k tokens
 };

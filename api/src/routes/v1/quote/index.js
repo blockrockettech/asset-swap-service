@@ -2,23 +2,24 @@ import express from 'express';
 
 const quote = express.Router({mergeParams: true});
 
-import {v4 as uuidv4} from 'uuid';
-
 import Quote from "../../../models/Quote";
-import FeeService from "../../../services/FeeService";
+import kChannelService from "../../../services/kChannelService";
 
 quote.post('/', async (req, res, next) => {
     const { chainId } = req.params;
-    const {channelId, input, output, amount} = req.body;
+    const { channelId, input, output, amount } = req.body;
 
-    // Generate a quote
-    const quoteId = uuidv4();
-    const fee = FeeService.getDAISwapFee(amount); // TODO: this is not a real calculation - to be replaced
-    const outputAfterFee = parseFloat(amount) - fee;
+    const { id, fee, outputAfterFee } = await kChannelService.getQuote(
+        5777,
+        channelId,
+        input,
+        output,
+        amount
+    );
 
     // Persist the quote with associated request details
     await Quote.addQuote(
-        quoteId,
+        id,
         channelId,
         chainId,
         input,
@@ -33,7 +34,7 @@ quote.post('/', async (req, res, next) => {
                 channelId, input, output, amount
             },
             quote: {
-                id: quoteId,
+                id,
                 fee,
                 outputAfterFee
             }

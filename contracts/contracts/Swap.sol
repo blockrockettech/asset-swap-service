@@ -18,7 +18,7 @@ contract Swap {
         tokenB.transfer(msg.sender, _liquidityToSend);
     }
 
-    function swap(IERC20 _input, uint256 _amount, address _beneficiary) external {
+    function swap(IERC20 _input, uint256 _amount, uint256 _fee, address _beneficiary) external {
         // make sure input is one of the tokens we have
         address inputAddress = address(_input);
         bool isTokenA = inputAddress == address(tokenA);
@@ -33,6 +33,13 @@ contract Swap {
 
         // swap the tokens
         _input.transferFrom(_beneficiary, self, _amount);
-        output.transfer(_beneficiary, _amount);
+        output.transfer(_beneficiary, _amount - _fee);
+    }
+
+    // Will allow external callers to sense check if `_tokenAddress` is either tokenA or tokenB which would allow trading
+    function isValidInputOrOutputToken(address _tokenAddress) external view returns (bool) {
+        address tokenAAddress = address(tokenA);
+        address tokenBAddress = address(tokenB);
+        return _tokenAddress == tokenAAddress || _tokenAddress == tokenBAddress;
     }
 }
