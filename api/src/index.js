@@ -1,13 +1,10 @@
 import express from 'express';
 const app = express();
 
-import infoRouter from './routes/info';
-
 import bodyParser from 'body-parser';
 import compression from 'compression';
 import jayson from "jayson";
-import { Quote, Swap } from "./routes/v1";
-import * as quote from "./routes/v1/quote";
+import { Quote, Swap } from "./servers/v1";
 
 if (process.env.NODE_ENV !== 'test') {
   app.use(compression());
@@ -16,8 +13,8 @@ if (process.env.NODE_ENV !== 'test') {
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
 
-app.use('/', infoRouter);
-app.post('/v1/quote', jayson.server(quote).middleware());
+app.post('/v1/quote', jayson.server(Quote).middleware());
+app.post('/v1/swap', jayson.server(Swap).middleware());
 
 // Default error handler for all routes
 app.use((err, req, res, next) => {
