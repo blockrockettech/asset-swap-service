@@ -1,5 +1,6 @@
 import { client } from './Client';
 
+// TODO: use prepared statements
 class Quote {
     constructor() {
         this.client = client;
@@ -9,6 +10,13 @@ class Quote {
 
     async getAll(chainId) {
         const queryResult = await this.client.query(`SELECT * FROM ${this.table} WHERE chain_id = ${chainId}`);
+        return queryResult.rows;
+    }
+
+    async getQuote(channelId, quoteId, chainId) {
+        const queryResult = await this.client.query(
+          `SELECT * FROM ${this.table} WHERE channel_id = '${channelId}' AND quote_id = '${quoteId}' AND chain_id = ${chainId}`
+        );
         return queryResult.rows;
     }
 

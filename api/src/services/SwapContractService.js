@@ -21,4 +21,13 @@ export class SwapContractService {
     isValidInputOrOutputToken(tokenAddress) {
         return this.contract.isValidInputOrOutputToken(tokenAddress);
     }
+
+    swap(inputToken, amount, fee, beneficiary) {
+        return this.contract.swap(
+          inputToken,
+          amount,
+          fee,
+          beneficiary
+        );
+    }
 }

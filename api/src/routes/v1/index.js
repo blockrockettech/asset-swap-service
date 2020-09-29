@@ -1,10 +1,5 @@
-import express from 'express';
-const v1 = express.Router({mergeParams: true});
+import quote from './quote';
+import swap from './swap';
 
-import quoteRouter from './quote';
-import swapRouter from './swap';
-
-v1.use('/quote', quoteRouter);
-v1.use('/swap', swapRouter);
-
-export default v1;
+export const Quote = quote;
+export const Swap = swap;
