@@ -12,10 +12,5 @@ export const sinon = _sinon;
 
 // URL exports
 export const INFO_URL = '/';
-export function base_url(chainId) {
-    return `/v1/network/${chainId}`;
-}
-
-export function quote_url(chainId) {
-    return `${base_url(chainId)}/quote`
-}
+export const BASE_URL = '/v1'
+export const QUOTE_URL = BASE_URL + '/quote';
