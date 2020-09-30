@@ -3,7 +3,7 @@ import Quote from "../../../../src/models/Quote";
 import kChannelService from "../../../../src/services/kChannelService";
 import {v4 as uuidv4} from "uuid";
 
-describe.only('Quote route tests', () => {
+describe('Quote server tests', () => {
     afterEach(function () {
         sinon.restore();
     });
