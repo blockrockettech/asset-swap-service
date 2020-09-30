@@ -3,13 +3,13 @@ import Quote from "../../../../src/models/Quote";
 import Web3Service from "../../../../src/services/Web3Service";
 import kChannelService from "../../../../src/services/kChannelService";
 
-describe('Swap server tests', () => {
+describe.skip('Swap server tests', () => {
     afterEach(function () {
         sinon.restore();
     });
 
     describe('Given a quote', () => {
-        it.only('Facilitates a swap', done => {
+        it('Facilitates a swap', done => {
             const getQuoteResponse = [
                 {
                     input: 'DAI',
