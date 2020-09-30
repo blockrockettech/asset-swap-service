@@ -11,12 +11,12 @@ export function getQuote(args, callback) {
         output,
         amount
     ).then(({ success, ...quoteDetailsOrError }) => {
-        // if (!success) {
-        //     return res.status(500)
-        //         .json({
-        //             ...quoteDetailsOrError
-        //         });
-        // }
+        if (!success) {
+            callback(null, {
+                ...quoteDetailsOrError
+            });
+            return;
+        }
 
         const { id, fee, outputAfterFee } = quoteDetailsOrError;
 

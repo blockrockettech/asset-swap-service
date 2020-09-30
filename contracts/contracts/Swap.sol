@@ -13,7 +13,7 @@ contract Swap {
         tokenB = new MockERC20("FakexDAI", "xDAI");
 
         // give sender some tokens to trade
-        uint256 _liquidityToSend = 250000000000000000000000; // 250k tokens
+        uint256 _liquidityToSend = 500000000000000000000000; // 500k tokens
         tokenA.transfer(msg.sender, _liquidityToSend);
         tokenB.transfer(msg.sender, _liquidityToSend);
     }
