@@ -1,0 +1,13 @@
+version: '3.7'
+services:
+  database:
+    image: "postgres" # use latest official postgres version
+    env_file:
+      - .env # configure postgres
+    ports:
+      - 5432:5432
+    volumes:
+      - database-data:/var/lib/postgresql/data/
+      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
+volumes:
+  database-data: # named volumes can be managed easier using docker-compose
