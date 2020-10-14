@@ -27,12 +27,10 @@ class Quote {
     }
 
     async addQuote(quote_id: string, channel_uuid: string, input: TransactionValue, output: TransactionValue, fee: number) {
-        return this.client.query(
-            `
-                INSERT INTO quote(quote_id, channel_id, input, output, amount, fee)
-                VALUES('${quote_id}', '${channel_uuid}', '${input.smart_contract}', '${output.kind}', ${output.value}, ${fee})
-            `
-        );
+        return this.client.query(`
+            INSERT INTO quote(quote_id, channel_id, input, output, amount, fee)
+            VALUES('${quote_id}', '${channel_uuid}', '${input.smart_contract}', '${output.smart_contract}', '${input.value}', ${fee})
+        `);
     }
 }
 

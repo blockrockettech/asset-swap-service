@@ -7,7 +7,9 @@ import express from 'express';
 import compression from 'compression';
 import bodyParser from 'body-parser';
 
-import {Quote, Swap} from "./servers/jsonrpc";
+import {Quote} from "./servers/jsonrpc";
+import {KChannelsWSManager} from "./workers/KChannelsWSManager";
+import getWeb3Signer from "./services/web3Signer";
 
 const jayson = require('jayson');
 
@@ -22,7 +24,13 @@ app.use(bodyParser.urlencoded({extended: false}));
 
 // JSON-RPC endpoints
 app.post('/quote', jayson.server(Quote).middleware());
-app.post('/swap', jayson.server(Swap).middleware());
+
+// // Start the kchannels websocket manager
+const {web3, web3Signer} = getWeb3Signer();
+new KChannelsWSManager({
+    web3,
+    web3Signer
+}).start();
 
 // Default error handler for all routes
 app.use((err, req, res, next) => {

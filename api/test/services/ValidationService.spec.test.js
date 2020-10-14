@@ -5,7 +5,7 @@ export const {expect} = chai;
 
 import validationService from '../../src/services/ValidationService';
 
-describe.only('ValidationService', () => {
+describe('ValidationService', () => {
   it('matches xDAI DAI pair', () => {
 
   });

@@ -9,6 +9,7 @@
     "esModuleInterop": true,
     // Ensure that Babel can safely transpile files in the TypeScript project
     "isolatedModules": true,
+    "allowSyntheticDefaultImports": true,
     "types": [
       "node",
       "mocha",

@@ -4,7 +4,7 @@ const {expect} = chai;
 
 const KChannelsService = require('../../src/services/KChannelsService');
 
-describe.only('KChannelsService tests', async () => {
+describe('KChannelsService tests', async () => {
 
   describe('getAuthChallenge()', async () => {
     it('Gets auth challenge', async () => {

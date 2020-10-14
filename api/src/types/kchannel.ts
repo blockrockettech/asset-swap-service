@@ -46,10 +46,11 @@ export interface TransactionValue {
 export interface ChannelAsset {
     smart_contract: string;
     value: string;
+    chain_id: string;
 }
 
 export interface ChannelInfo {
-    channel_state: string;
+    channel_state: ChannelState;
     channel_state_hash: string;
     channel_status: string;
 }

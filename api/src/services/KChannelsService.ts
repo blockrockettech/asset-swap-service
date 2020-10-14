@@ -1,32 +1,104 @@
 import axios from 'axios';
 
-import {AuthenticationSuccess, ClientInfo} from "../types/kchannel";
 import {randomNum} from "./randomNumber";
+import {AuthenticationSuccess, ChannelDefinition, ClientInfo} from "../types/kchannel";
 
-export const sendTransaction = async (transaction) => {
-    // TODO ...
-}
+const DEFAULT_CHAIN_ID = process.env.DEFAULT_CHAIN_ID;
 
-export const getAuthChallenge = async (account, chainId): Promise<AuthenticationSuccess> => {
+export const getKChannelBase = (chainId = DEFAULT_CHAIN_ID): string => `https://zone-manager.${KCHANNEL_CHAINS[chainId]}.kchannels.io`;
+
+/////////////////
+// Auth stuffs //
+/////////////////
+
+export const getAuthChallenge = async (account, chainId = DEFAULT_CHAIN_ID): Promise<any> => {
     console.log(`Getting KChannel authentication message for chainId [${chainId}] and user [${account}]`);
     return axios.get(
-        getKChannelBase(chainId) +
-        `/authentication_api/?signing_identity=${account}&client_unpredictable_number=${randomNum()}`
+        `${getKChannelBase(chainId)}/authentication_api/?signing_identity=${account}&client_unpredictable_number=${randomNum()}`
     ).then((response) => response.data);
 }
 
-export const signAuthChallenge = async (authChallenge) => {
-    // TODO do the web3 magic and 712 signature stuff below
+export const getAuthenticationTypedMessage = (message, chainId = DEFAULT_CHAIN_ID) => {
+    return {
+        primaryType: "AuthenticationChallenge",
+        types: AuthenticationTypes,
+        domain: domainData(chainId),
+        message,
+    };
 }
 
-export const getClientInfo = async (chainId, jwtToken): Promise<ClientInfo> => {
-    console.log(`Getting KChannel client info for chainId [${chainId}]`);
-    return axios.get(getKChannelBase(chainId) + `/ui/client_api/`, {
-        headers: {
-            'Authorization': `Bearer ${jwtToken}`
-        }
+export const completeAuthChallenge = (authChallenge, signature, chainId = DEFAULT_CHAIN_ID):Promise<AuthenticationSuccess> => {
+    const authBaseUrl = `${getKChannelBase(chainId)}/authentication_api/`;
+    return axios.post(authBaseUrl, {
+        ...authChallenge,
+        signature,
     }).then((response) => response.data);
 }
+
+/////////////////////////
+// Channel definitions //
+/////////////////////////
+
+export const getClientInfo = async (authToken, chainId = DEFAULT_CHAIN_ID):Promise<ClientInfo> => {
+    console.log(`Getting clietn info`);
+    return axios.get(
+        `${getKChannelBase(chainId)}/ui/client_api/`,
+        {
+            headers: {
+                "Authorization": `Bearer ${authToken}`,
+            }
+        }
+    ).then((response) => response.data);
+}
+
+export const createChannelDefinition = async (authToken, chainId = DEFAULT_CHAIN_ID): Promise<ChannelDefinition> => {
+    console.log(`Getting KChannel channel definition with auth token [${authToken}] on chain [${chainId}]`);
+
+    return axios.post(`${getKChannelBase(chainId)}/client/channel/`,
+        {
+            jsonrpc: "2.0",
+            id: 1,
+            method: "create_channel_definition",
+            params: []
+        },
+        {
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${authToken}`,
+            }
+        }).then((response) => response.data.result);
+}
+
+export const updateAndCompleteChannelDefinition = async (authToken, create_channel_def, chainId = DEFAULT_CHAIN_ID): Promise<ChannelDefinition> => {
+    console.log(`Getting KChannel update and complete channel definition with auth token [${authToken}] on chain [${chainId}]`);
+
+    return axios.post(`${getKChannelBase(chainId)}/client/channel/`,
+        {
+            jsonrpc: "2.0",
+            id: 1,
+            method: "update_and_complete_channel_definition",
+            params: [create_channel_def]
+        },
+        {
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${authToken}`,
+            }
+        }).then((response) => response.data.result);
+}
+
+export function getChannelDefinitionTypedMessage(message, chainId = DEFAULT_CHAIN_ID) {
+    return {
+        primaryType: "ChannelDefinition",
+        types: ChannelDefinitionTypes,
+        domain: domainData(chainId),
+        message,
+    };
+}
+
+///////////
+// Types //
+///////////
 
 export const KCHANNEL_CHAINS = {
     1: "mainnet",
@@ -35,10 +107,12 @@ export const KCHANNEL_CHAINS = {
     100: "xdai",
 };
 
-export const getKChannelBase = (chainId): string => `https://zone-manager.${KCHANNEL_CHAINS[chainId]}.kchannels.io`;
-
-// n.b: requires <CHANNEL_UUID>/<CHANNEL_DEFINITION_VERSION>/ appending
-export const getKChannelWssBase = (chainId): string => `https://zone-manager.${KCHANNEL_CHAINS[chainId]}.kchannels.io/client/ws/channel`;
+export const CHAIN_RPC = {
+    1: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
+    3: `https://ropsten.infura.io/v3/${process.env.INFURA_KEY}`,
+    4: `https://rinkeby.infura.io/v3/${process.env.INFURA_KEY}`,
+    100: "https://rpc.xdaichain.com/",
+};
 
 export const domainSeparatorType = [
     {name: "name", type: "string"},
@@ -76,120 +150,12 @@ const ChannelDefinitionTypes = {
     ],
 };
 
-function getAuthenticationTypedMessage(chainId, message) {
-    return JSON.stringify({
-        primaryType: "AuthenticationChallenge",
-        types: AuthenticationTypes,
-        domain: domainData(chainId),
-        message,
-    })
-}
-
-function getChannelDefinitionTypedMessage(chainId, message) {
-    return JSON.stringify({
-        primaryType: "ChannelDefinition",
-        types: ChannelDefinitionTypes,
-        domain: domainData(chainId),
-        message,
-    });
-}
-
-function getTransactionDefinitionTypedMessage(chainId, message, primaryType) {
-
-    //ChannelAsset(address smart_contract,uint256 value)
-    const channelAsset = [
-        {name: "smart_contract", type: "address"},
-        {name: "value", type: "uint256"},
-    ];
-
-    //ChannelState(uint256 nonce,ChannelAsset[] channel_asset_list)
-    const channelState = [
-        {name: "nonce", type: "uint256"},
-        {name: "channel_asset_list", type: "ChannelAsset[]"},
-    ];
-
-    //ChannelDefinition(string channel_uuid,uint256 definition_version,string channel_rating_id,address zone_address,address owner_address,address deposit_address,address validator_address,address[] sender_address_list)
-    const channelDefinition = [
-        {name: "channel_uuid", type: "string"},
-        {name: "definition_version", type: "uint256"},
-        {name: "channel_rating_id", type: "string"},
-        {name: "zone_address", type: "address"},
-        {name: "owner_address", type: "address"},
-        {name: "deposit_address", type: "address"},
-        {name: "validator_address", type: "address"},
-        {name: "sender_address_list", type: "address[]"},
-        {name: "initial_state_hash", type: "bytes32"},
-    ];
-
-    //TransactionValue(address smart_contract,int256 value,string kind)
-    const transactionValue = [
-        {name: "smart_contract", type: "address"},
-        {name: "value", type: "int256"},
-        {name: "kind", type: "string"},
-    ];
-
-    //TransactionParty(uint256 nonce,bytes32 state_hash,uint256 timestamp,ChannelDefinition channel_definition,TransactionValue[] fee_list)
-    const transactionParty = [
-        {name: "nonce", type: "uint256"},
-        {name: "state_hash", type: "bytes32"},
-        {name: "timestamp", type: "uint256"},
-        {name: "channel_definition", type: "ChannelDefinition"},
-        {name: "fee_list", type: "TransactionValue[]"},
-    ];
-
-    //Transaction(string request_uuid,string reference_data,TransactionValue[] value_list,TransactionParty sender_party,TransactionParty recipient_party)
-    const transaction = [
-        {name: "request_uuid", type: "string"},
-        {name: "reference_data", type: "string"},
-        {name: "value_list", type: "TransactionValue[]"},
-        {name: "sender_party", type: "TransactionParty"},
-        {name: "recipient_party", type: "TransactionParty"},
-    ];
-
-    //TransactionSummary(string request_uuid,string channel_uuid,uint256 definition_version,address client_signer_address,address zone_signer_address,bytes32 final_state_hash,bytes32 external_tx_reference,address recipient_address,bytes32 peer_last_seen_state_hash,uint256 timestamp,TransactionValue[] value_list)
-    const transactionSummary = [
-        {name: "request_uuid", type: "string"},
-        {name: "channel_uuid", type: "string"},
-        {name: "definition_version", type: "uint256"},
-        {name: "client_signer_address", type: "address"},
-        {name: "zone_signer_address", type: "address"},
-        {name: "final_state_hash", type: "bytes32"},
-        {name: "external_tx_reference", type: "bytes32"},
-        {name: "recipient_address", type: "address"},
-        {name: "peer_last_seen_state_hash", type: "bytes32"},
-        {name: "timestamp", type: "uint256"},
-        {name: "value_list", type: "TransactionValue[]"},
-    ];
-
-    //TransactionMetadata(string request_uuid,string channel_uuid,uint256 definition_version,uint256 reversal_nonce,string[] external_tx_reference_list)
-    const transactionMetadata = [
-        {name: "request_uuid", type: "string"},
-        {name: "channel_uuid", type: "string"},
-        {name: "definition_version", type: "uint256"},
-        {name: "reversal_nonce", type: "uint256"},
-        {name: "external_tx_reference_list", type: "string[]"},
-    ];
-
-    return {
-        types: {
-            EIP712Domain: domainSeparatorType,
-            ChannelAsset: channelAsset,
-            ChannelState: channelState,
-            ChannelDefinition: channelDefinition,
-            TransactionValue: transactionValue,
-            TransactionParty: transactionParty,
-            Transaction: transaction,
-            TransactionSummary: transactionSummary,
-            TransactionMetadata: transactionMetadata,
-        },
-        domain: domainData(chainId),
-        primaryType: primaryType,
-        message: message,
-    };
-}
-
 export const domainData = (chainId) => {
-    switch (chainId) {
+    if(!chainId){
+        throw new Error(`Missing domain name configuration`);
+    }
+
+    switch (parseInt(chainId)) {
         case 1:
             return {
                 name: "kChannels MVP",
@@ -214,14 +180,15 @@ export const domainData = (chainId) => {
                 verifyingContract: "0x6cd7e721D9D13707D3D447235A30DACFDe2e9fe5",
                 salt: "0xc4534c0e806db2a735d514924d31aedf0a58131fa433a7e4cc6c99f1b0a5c27a",
             };
-        // FIXME xDAI config needed
-        default:
+        case 100:
             return {
                 name: "kChannels MVP",
                 version: 1,
                 chainId: 100,
-                verifyingContract: "",
-                salt: "",
+                verifyingContract: "0xD62fB951A937e1f6afEEECf1a778c4A5ddeD791d",
+                salt: "0x6354dbe3f1d532aee9d8b117e359d0fcdbd8ae31c2fd8e95630dd67036e5bfc6",
             };
+        default:
+            throw new Error(`Unknown domain name configuration [${chainId}]`);
     }
 };

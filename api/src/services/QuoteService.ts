@@ -6,6 +6,8 @@ import {QuoteRequest} from "../types/internal";
 export default new class QuoteService {
 
     async generateQuote({channel_uuid, input, output}: QuoteRequest) {
+        console.log(`Generating quote for [${channel_uuid}]`);
+
         const quote_id = uuidv4();
 
         // calculate exchange fee  -> assumed fixed fee for now e.g. 1%
