@@ -1,4 +1,4 @@
-import {ChannelAsset, ChannelDefinition, ChannelInfo, ClientInfo} from "../types/kchannel";
+import {ChannelAsset, ChannelInfo} from "../types/kchannel";
 import {AssetSwapChannelState} from '../models';
 import {WebSocketSetup} from "../types/internal";
 
@@ -37,12 +37,6 @@ export class ChannelInfoWSManager {
             console.log('disconnected');
         });
 
-        // TODO handle inbound transaction on a new websocket
-        //  check type
-        //  marry up to quote
-        //  validate and consume ...
-        //  perform asset swap and reply
-
         wss.on('message', async (rawData: string) => {
             console.log(rawData);
 
@@ -71,6 +65,8 @@ export class ChannelInfoWSManager {
         wss.on('error', (error) => {
             console.log('error - something bad happened', error);
         });
+
+        return this;
     }
 
 

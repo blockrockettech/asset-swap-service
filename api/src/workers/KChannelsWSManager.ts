@@ -11,6 +11,7 @@ import {
 import {Account} from "web3-core";
 import {ChannelInfoWSManager} from "./ChannelInfoWSManager";
 import {AuthenticationSuccess, ChannelDefinition, ClientInfo} from "../types/kchannel";
+import {TransactionWSManager} from "./TransactionWSManager";
 
 const sigUtil = require('eth-sig-util');
 
@@ -77,14 +78,18 @@ export class KChannelsWSManager {
         console.log("clientInfo", clientInfo);
 
         // Start the Channel info websocket
-        const channelInfoWebsocket = new ChannelInfoWSManager({
+        const channelInfoWebsocket = await new ChannelInfoWSManager({
             clientInfo,
             channelDef,
             jwt,
-        });
+        }).start();
 
-        // kick it into action
-        await channelInfoWebsocket.start();
+        // Start the transaction manager
+        const transactionWSManagerPromise = await new TransactionWSManager({
+            clientInfo,
+            channelDef,
+            jwt,
+        }).start();
 
     }
 
