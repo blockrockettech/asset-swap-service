@@ -3,6 +3,7 @@
 
 ## Running the api
 
+ - See README for the api for more details
 
 First install dependencies
 
