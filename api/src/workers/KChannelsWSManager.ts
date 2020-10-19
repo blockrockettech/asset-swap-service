@@ -79,6 +79,7 @@ export class KChannelsWSManager {
 
         // Start the Channel info websocket
         const channelInfoWebsocket = await new ChannelInfoWSManager({
+            web3Signer: this.web3Signer,
             clientInfo,
             channelDef,
             jwt,
@@ -86,6 +87,7 @@ export class KChannelsWSManager {
 
         // Start the transaction manager
         const transactionWSManagerPromise = await new TransactionWSManager({
+            web3Signer: this.web3Signer,
             clientInfo,
             channelDef,
             jwt,

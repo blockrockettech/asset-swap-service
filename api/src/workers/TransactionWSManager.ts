@@ -1,7 +1,15 @@
 import {WebSocketSetup} from "../types/internal";
-import assetSwapService from "../services/AssetSwapService";
 import {AssetSwapChannelState, Quote} from "../models";
-import {ChannelAsset, ChannelInfo, Transaction, TransactionInfo} from "../types/kchannel";
+import {Transaction, TransactionInfo} from "../types/kchannel";
+import {
+    completeTransaction,
+    createNewTransaction,
+    getTransactionDefinitionTypedMessage,
+    processTransaction
+} from "../services/KChannelsService";
+import {Account} from "web3-core";
+
+const sigUtil = require('eth-sig-util');
 
 const _ = require('lodash');
 
@@ -9,11 +17,13 @@ const WebSocket = require('ws');
 
 export class TransactionWSManager {
 
+    private readonly web3Signer: Account;
     private readonly jwt: any;
     private readonly clientInfo: any;
     private readonly channelDef: any;
 
-    constructor({channelDef, clientInfo, jwt}: WebSocketSetup) {
+    constructor({web3Signer, channelDef, clientInfo, jwt}: WebSocketSetup) {
+        this.web3Signer = web3Signer;
         this.jwt = jwt;
         this.clientInfo = clientInfo;
         this.channelDef = channelDef;
@@ -79,16 +89,19 @@ export class TransactionWSManager {
 
                 const transaction: Transaction = message.transaction;
                 const reference_data = transaction.reference_data;
-                // Check quote reference defined
+
+                // Check quote reference is defined
                 if (!reference_data) {
-                    // TODO send total amount back to the sender
+                    console.info("Reference data not found, returning funds to sender");
+                    return this.sendMoneyBackToRecipient(transaction);
                 }
 
                 const quote = await Quote.getQuote(reference_data);
 
                 // Check quote valid and not already fulfilled
                 if (!quote || quote.filfilled) {
-                    // TODO send total amount back to the sender
+                    console.info("Quote not found or already fulfilled, returning funds to sender");
+                    return this.sendMoneyBackToRecipient(transaction);
                 }
 
                 const quotedAmount = quote.amount;
@@ -98,13 +111,15 @@ export class TransactionWSManager {
 
                 // Check from and amount marry up the quote issued
                 if (!valuesMatch || !contractsMatch) {
-                    // TODO send total amount back to the sender
+                    console.info("Quote invalid, returning funds to sender");
+                    return this.sendMoneyBackToRecipient(transaction);
                 }
 
                 // Check current channel balance is enough to satisfy the quote
                 const currentBalance = await AssetSwapChannelState.getChannelBalance(quote.output);
                 if (currentBalance < totalPayable) {
-                    // TODO send total amount back to the sender
+                    console.info("Unable to fulfill quote due to low balance, returning funds to sender");
+                    return this.sendMoneyBackToRecipient(transaction);
                 }
 
                 const sender = transaction.sender_party.channel_definition;
@@ -121,5 +136,103 @@ export class TransactionWSManager {
         return this;
     }
 
+    async sendMoneyBackToRecipient(incomingTransaction: Transaction) {
+
+        const channelUuid = this.channelDef.channel_uuid;
+        const definitionVersion = this.channelDef.definition_version;
+        const baseZoneClientEndpoint = this.clientInfo.zone_location.zone_client_endpoint;
+
+        // FIXME is this the correct sender party?
+        const senderParty = incomingTransaction.sender_party.channel_definition.owner_address;
+        const transactionValue = incomingTransaction.value_list[0];
+
+        console.log(`Sending money back to sender - account [${senderParty}]`, transactionValue);
+
+        ///////////////////////////////////////////////////////////////////////////////////////////
+        // 1. This requests the backend to create a new transaction based on several parameters. //
+        // This the first of 3 APIs that are required to transact.                               //
+        ///////////////////////////////////////////////////////////////////////////////////////////
+
+        const createTransactionResponse = await createNewTransaction(
+            this.jwt,
+            baseZoneClientEndpoint,
+            this.web3Signer.address,
+            channelUuid,
+            definitionVersion,
+            senderParty,
+            transactionValue
+        );
+
+        // Check valid
+        if (createTransactionResponse.error || !createTransactionResponse.result) {
+            console.error("Unable to create new transaction", createTransactionResponse);
+            return Promise.reject(createTransactionResponse);
+        }
+
+        // TODO Validate the response ... how?
+
+        //////////////////////////////////////////////////////////////
+        // 2. Submit a signed transaction to the backend.           //
+        // This the second of 3 APIs that are required to transact. //
+        //////////////////////////////////////////////////////////////
+
+        const createTransaction = createTransactionResponse.result;
+
+        // Build message definition
+        const transactionMessage = await getTransactionDefinitionTypedMessage(createTransaction.result, "Transaction");
+
+        // Sign it
+        const createNewTransactionTypedSignature = sigUtil.signTypedData_v4(
+            Buffer.from(this.web3Signer.privateKey.substr(2), 'hex'),
+            {data: transactionMessage}
+        );
+
+        // Add signature to the signature list
+        createTransaction.signature_list = [createNewTransactionTypedSignature];
+
+        const processTransactionResponse = await processTransaction(this.jwt, baseZoneClientEndpoint, channelUuid, definitionVersion, createTransaction);
+
+        // Check valid
+        if (processTransactionResponse.error || !processTransactionResponse.result) {
+            console.error("Unable to process transaction", processTransactionResponse);
+            return Promise.reject(processTransactionResponse);
+        }
+
+        // TODO Validate the response ... how?
+
+        //////////////////////////////////////////////////////////////////////
+        // 3. Submit a signed transaction summary to the backend.           //
+        // This the third and last of 3 APIs that are required to transact. //
+        //////////////////////////////////////////////////////////////////////
+
+        const [transaction, transactionSummary] = processTransactionResponse.result;
+
+        // Build summary message
+        const transactionSummaryMessage = await getTransactionDefinitionTypedMessage(transactionSummary, "TransactionSummary");
+
+        // Sign it
+        const transactionSummaryTypedSignature = sigUtil.signTypedData_v4(
+            Buffer.from(this.web3Signer.privateKey.substr(2), 'hex'),
+            {data: transactionSummaryMessage}
+        );
+        transactionSummary.signature_list = [transactionSummaryTypedSignature];
+
+        const completeTransactionResponse = await completeTransaction(this.jwt, baseZoneClientEndpoint, channelUuid, definitionVersion, transactionSummary);
+
+        // Check valid
+        if (completeTransactionResponse.error || !completeTransactionResponse.result) {
+            console.error("Unable to complete transaction", completeTransactionResponse);
+            return Promise.reject(completeTransactionResponse);
+        }
+
+        // TODO Validate the response ... how?
+
+        const completeTransactionResult = completeTransactionResponse.result;
+        console.log("completeTransactionResult", completeTransactionResult);
+
+        // TODO handled failed transaction
+
+        return Promise.resolve(completeTransactionResult);
+    }
 
 }

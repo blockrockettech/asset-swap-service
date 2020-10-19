@@ -40,6 +40,7 @@ export interface Transaction {
 export interface TransactionValue {
     smart_contract: string;
     value: string;
+    chain_id: string;
     kind: string;
 }
 
@@ -115,4 +116,10 @@ export interface ZoneLocation {
     zone_address: string;
     zone_public_key: string;
     zone_client_endpoint: string;
+}
+
+export interface ErrorResponse {
+    error_code: string;
+    message: string;
+    error_class: string;
 }
