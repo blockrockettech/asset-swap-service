@@ -79,10 +79,10 @@ export class TransactionWSManager {
         });
 
         wss.on('message', async (rawData: string) => {
-            console.log(rawData);
+            // console.log(rawData);
 
             const message: TransactionInfo = JSON.parse(rawData);
-            console.log("message", message);
+            console.log("Message received", [message.transaction_status, message.transaction.request_uuid]);
 
             // We only care about completed transaction
             if (message.transaction_status === "Completed") {
@@ -122,7 +122,7 @@ export class TransactionWSManager {
                     return this.sendMoneyBackToRecipient(transaction);
                 }
 
-                // send the moneis
+                // send the monies
                 const sender = transaction.sender_party.channel_definition;
                 return this.facilitateSwap(quote, sender);
             }
@@ -159,6 +159,9 @@ export class TransactionWSManager {
             return Promise.reject(createTransactionResponse);
         }
 
+        // Copy reference_data back onto every field
+        // createTransaction.reference_data =
+
         // TODO send transaction from yourself to the recipient for quotedAmount
 
         // Mark quote as fulfilled
@@ -192,6 +195,7 @@ export class TransactionWSManager {
             senderParty,                // the senders address - derived from incomingTransaction.sender_party.channel_definition.owner_address
             transactionValue            // the incoming transaction - derived from incomingTransaction.value_list[0]
         );
+        console.log("createTransactionResponse", JSON.stringify(createTransactionResponse.result));
 
         // Check valid
         if (createTransactionResponse.error || !createTransactionResponse.result) {
@@ -200,6 +204,10 @@ export class TransactionWSManager {
         }
 
         // TODO Validate the response ... how?
+
+        // TODO do I still need to set the quote reference onto the transaction even though this is the failure path?
+        // Copy reference_data back onto every field
+        // createTransaction.reference_data =
 
         //////////////////////////////////////////////////////////////
         // 2. Submit a signed transaction to the backend.           //
@@ -258,15 +266,16 @@ export class TransactionWSManager {
         // Check valid
         if (completeTransactionResponse.error || !completeTransactionResponse.result) {
             console.error("Unable to complete transaction", completeTransactionResponse);
+
+            // TODO handled failed transaction ... ?
+
             return Promise.reject(completeTransactionResponse);
         }
 
         // TODO Validate the response ... how?
 
         const completeTransactionResult = completeTransactionResponse.result;
-        console.log("completeTransactionResult", completeTransactionResult);
-
-        // TODO handled failed transaction
+        console.log("Transaction completed", completeTransactionResult);
 
         return Promise.resolve(completeTransactionResult);
     }

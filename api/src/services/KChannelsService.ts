@@ -115,7 +115,7 @@ export function createNewTransaction(
     channel_version,
     recipient,
     transactionValue: TransactionValue
-):Promise<any> {
+): Promise<any> {
     const params = [
         sender,
         channel_uuid,
@@ -126,7 +126,7 @@ export function createNewTransaction(
         ],
         false, // force external tx
         null, // unsure of this ... ?
-        true, // fees subtracted from amount being sent ... ?
+        false, // fees subtracted from amount being sent ... ?
         false, // sending to user, not deposit address
     ];
 
@@ -195,16 +195,17 @@ export function completeTransaction(authToken, zone_client_endpoint, channel_uui
 }
 
 export function getTransactionDefinitionTypedMessage(message, primaryType, chainId = DEFAULT_CHAIN_ID) {
-    //ChannelAsset(address smart_contract,uint256 value)
+    //ChannelAsset(address smart_contract,uint256 chain_id,uint256 value)
     const channelAsset = [
         {name: "smart_contract", type: "address"},
-        {name: "value", type: "uint256"},
+        {name: "chain_id", type: "uint256"},
+        {name: "value", type: "uint256"}
     ];
 
     //ChannelState(uint256 nonce,ChannelAsset[] channel_asset_list)
     const channelState = [
         {name: "nonce", type: "uint256"},
-        {name: "channel_asset_list", type: "ChannelAsset[]"},
+        {name: "channel_asset_list", type: "ChannelAsset[]"}
     ];
 
     //ChannelDefinition(string channel_uuid,uint256 definition_version,string channel_rating_id,address zone_address,address owner_address,address deposit_address,address validator_address,address[] sender_address_list)
@@ -217,15 +218,15 @@ export function getTransactionDefinitionTypedMessage(message, primaryType, chain
         {name: "deposit_address", type: "address"},
         {name: "validator_address", type: "address"},
         {name: "sender_address_list", type: "address[]"},
-        {name: "initial_state_hash", type: "bytes32"},
+        {name: "initial_state_hash", type: "bytes32"}
     ];
 
-    //TransactionValue(address smart_contract,int256 value,string kind)
+    //TransactionValue(address smart_contract,uint256 chain_id,int256 value,string kind)
     const transactionValue = [
         {name: "smart_contract", type: "address"},
+        {name: "chain_id", type: "uint256"},
         {name: "value", type: "int256"},
-        {name: "chain_id", type: "string"},
-        {name: "kind", type: "string"},
+        {name: "kind", type: "string"}
     ];
 
     //TransactionParty(uint256 nonce,bytes32 state_hash,uint256 timestamp,ChannelDefinition channel_definition,TransactionValue[] fee_list)
@@ -234,7 +235,7 @@ export function getTransactionDefinitionTypedMessage(message, primaryType, chain
         {name: "state_hash", type: "bytes32"},
         {name: "timestamp", type: "uint256"},
         {name: "channel_definition", type: "ChannelDefinition"},
-        {name: "fee_list", type: "TransactionValue[]"},
+        {name: "fee_list", type: "TransactionValue[]"}
     ];
 
     //Transaction(string request_uuid,string reference_data,TransactionValue[] value_list,TransactionParty sender_party,TransactionParty recipient_party)
@@ -243,7 +244,7 @@ export function getTransactionDefinitionTypedMessage(message, primaryType, chain
         {name: "reference_data", type: "string"},
         {name: "value_list", type: "TransactionValue[]"},
         {name: "sender_party", type: "TransactionParty"},
-        {name: "recipient_party", type: "TransactionParty"},
+        {name: "recipient_party", type: "TransactionParty"}
     ];
 
     //TransactionSummary(string request_uuid,string channel_uuid,uint256 definition_version,address client_signer_address,address zone_signer_address,bytes32 final_state_hash,bytes32 external_tx_reference,address recipient_address,bytes32 peer_last_seen_state_hash,uint256 timestamp,TransactionValue[] value_list)
@@ -258,16 +259,23 @@ export function getTransactionDefinitionTypedMessage(message, primaryType, chain
         {name: "recipient_address", type: "address"},
         {name: "peer_last_seen_state_hash", type: "bytes32"},
         {name: "timestamp", type: "uint256"},
-        {name: "value_list", type: "TransactionValue[]"},
+        {name: "value_list", type: "TransactionValue[]"}
     ];
 
-    //TransactionMetadata(string request_uuid,string channel_uuid,uint256 definition_version,uint256 reversal_nonce,string[] external_tx_reference_list)
+    //ExternalTxReference(string value,uint256 chain_id)
+    const externalTxReference = [
+        {name: "value", type: "string"},
+        {name: "chain_id", type: "uint256"}
+    ]
+
+    //TransactionMetadata(string request_uuid,string channel_uuid,uint256 definition_version,uint256 reversal_nonce,ExternalTxReference[] external_tx_reference_list)
     const transactionMetadata = [
         {name: "request_uuid", type: "string"},
         {name: "channel_uuid", type: "string"},
         {name: "definition_version", type: "uint256"},
         {name: "reversal_nonce", type: "uint256"},
-        {name: "external_tx_reference_list", type: "string[]"},
+        {name: "external_tx_reference_list", type: "ExternalTxReference[]"}
+
     ];
 
     return {
@@ -281,6 +289,7 @@ export function getTransactionDefinitionTypedMessage(message, primaryType, chain
             Transaction: transaction,
             TransactionSummary: transactionSummary,
             TransactionMetadata: transactionMetadata,
+            ExternalTxReference: externalTxReference,
         },
         domain: domainData(chainId),
         primaryType: primaryType,
