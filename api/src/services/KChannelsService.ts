@@ -224,6 +224,7 @@ export function getTransactionDefinitionTypedMessage(message, primaryType, chain
     const transactionValue = [
         {name: "smart_contract", type: "address"},
         {name: "value", type: "int256"},
+        {name: "chain_id", type: "string"},
         {name: "kind", type: "string"},
     ];
 

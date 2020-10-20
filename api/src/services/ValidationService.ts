@@ -11,9 +11,18 @@ export default new class ValidationService {
 
     async validatePair(input: TransactionValue, output: TransactionValue): Promise<Boolean> {
 
+        // Validate they look like addresses
+        if (!utils.isAddress(input.smart_contract) || !utils.isAddress(output.smart_contract)) {
+            console.log(`Failed validation - invalid address for inbound/outbound contract`);
+            return false;
+        }
+
+        const inboundContract = utils.getAddress(input.smart_contract);
+        const outboundContract = utils.getAddress(output.smart_contract);
+
         // Cannot go between the same asset
         if (input.smart_contract === output.smart_contract) {
-            console.log(`Failed validation as input and output are the same`);
+            console.log(`Failed validation - input and output are the same`);
             return false;
         }
 
@@ -21,7 +30,6 @@ export default new class ValidationService {
         const allowedContracts = [XDAI, DAI];
 
         // Check both ins and out are from this pair
-        return _.includes(allowedContracts, utils.getAddress(input.smart_contract))
-            && _.includes(allowedContracts, utils.getAddress(output.smart_contract));
+        return _.includes(allowedContracts, inboundContract) && _.includes(allowedContracts, outboundContract);
     }
 };

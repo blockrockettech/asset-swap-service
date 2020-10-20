@@ -13,6 +13,4 @@ export const sinon = _sinon;
 export const ethers = _ethers;
 
 // URL exports
-export const BASE_URL = '/v1'
-export const QUOTE_URL = BASE_URL + '/quote';
-export const SWAP_URL = BASE_URL + '/swap';
+export const QUOTE_URL = '/quote';

@@ -154,13 +154,13 @@ export class TransactionWSManager {
         ///////////////////////////////////////////////////////////////////////////////////////////
 
         const createTransactionResponse = await createNewTransaction(
-            this.jwt,
-            baseZoneClientEndpoint,
-            this.web3Signer.address,
-            channelUuid,
-            definitionVersion,
-            senderParty,
-            transactionValue
+            this.jwt,                   // my auth token
+            baseZoneClientEndpoint,     // my current zone
+            this.web3Signer.address,    // my account
+            channelUuid,                // my channel UUID
+            definitionVersion,          // my channel version
+            senderParty,                // the senders address - derived from incomingTransaction.sender_party.channel_definition.owner_address
+            transactionValue            // the incoming transaction - derived from incomingTransaction.value_list[0]
         );
 
         // Check valid
@@ -179,7 +179,7 @@ export class TransactionWSManager {
         const createTransaction = createTransactionResponse.result;
 
         // Build message definition
-        const transactionMessage = await getTransactionDefinitionTypedMessage(createTransaction.result, "Transaction");
+        const transactionMessage = await getTransactionDefinitionTypedMessage(createTransaction, "Transaction");
 
         // Sign it
         const createNewTransactionTypedSignature = sigUtil.signTypedData_v4(
@@ -190,7 +190,13 @@ export class TransactionWSManager {
         // Add signature to the signature list
         createTransaction.signature_list = [createNewTransactionTypedSignature];
 
-        const processTransactionResponse = await processTransaction(this.jwt, baseZoneClientEndpoint, channelUuid, definitionVersion, createTransaction);
+        const processTransactionResponse = await processTransaction(
+            this.jwt,
+            baseZoneClientEndpoint,
+            channelUuid,
+            definitionVersion,
+            createTransaction
+        );
 
         // Check valid
         if (processTransactionResponse.error || !processTransactionResponse.result) {

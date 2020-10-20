@@ -25,12 +25,14 @@ app.use(bodyParser.urlencoded({extended: false}));
 // JSON-RPC endpoints
 app.post('/quote', jayson.server(Quote).middleware());
 
-// // Start the kchannels websocket manager
-const {web3, web3Signer} = getWeb3Signer();
-new KChannelsWSManager({
-    web3,
-    web3Signer
-}).start();
+if (process.env.NODE_ENV !== 'test') {
+    // Start the kchannels websocket manager
+    const {web3, web3Signer} = getWeb3Signer();
+    new KChannelsWSManager({
+        web3,
+        web3Signer
+    }).start();
+}
 
 // Default error handler for all routes
 app.use((err, req, res, next) => {

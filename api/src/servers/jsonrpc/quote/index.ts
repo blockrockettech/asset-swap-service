@@ -15,22 +15,23 @@ export async function generate_quote(quoteRequest: QuoteRequest, callback) {
     const isValidPair = await validationService.validatePair(input, output);
     if (!isValidPair) {
         console.log(`Rejecting quote - Invalid pair found`);
-        return callback(null, {
-            msg: `Invalid pair`,
-            success: false
+        return callback({
+            code: -32602,
+            message: `Invalid pair`
         });
     }
 
     // Ensure we have enough in the out going channel to fulfill the swap
-    const outgoingChannelBalance = await AssetSwapChannelState.getChannelBalance(output.smart_contract)
+    const outgoingChannelBalance = await AssetSwapChannelState.getChannelBalance(output.smart_contract);
+    console.log(`Found outbound channel balance of [${outgoingChannelBalance}] for [${output.smart_contract}]`);
 
     const requestOutput = BigNumber.from(input.value);
 
-    if (!outgoingChannelBalance || requestOutput.lt(BigNumber.from(outgoingChannelBalance))) {
+    if (!outgoingChannelBalance || BigNumber.from(outgoingChannelBalance).lt(requestOutput)) {
         console.log(`Rejecting quote - asset swap balance to low`);
-        return callback(null, {
-            msg: `Unable to satisfy swap, balance to low`,
-            success: false
+        return callback({
+            code: -32000,
+            message: `Unable to satisfy swap, balance to low`
         });
     }
 
