@@ -122,10 +122,9 @@ export class TransactionWSManager {
                     return this.sendMoneyBackToRecipient(transaction);
                 }
 
+                // send the moneis
                 const sender = transaction.sender_party.channel_definition;
-
-                // TODO send transaction from yourself to the recipient for quotedAmount
-
+                return this.facilitateSwap(quote, sender);
             }
         });
 
@@ -134,6 +133,37 @@ export class TransactionWSManager {
         });
 
         return this;
+    }
+
+    async facilitateSwap(quote, sender) {
+        const channelUuid = this.channelDef.channel_uuid;
+        const definitionVersion = this.channelDef.definition_version;
+        const baseZoneClientEndpoint = this.clientInfo.zone_location.zone_client_endpoint;
+
+        const quotedAmount = quote.amount;
+        const outputCurrency = quote.output;
+
+        const createTransactionResponse = await createNewTransaction(
+            this.jwt,                   // my auth token
+            baseZoneClientEndpoint,     // my current zone
+            this.web3Signer.address,    // my account
+            channelUuid,                // my channel UUID
+            definitionVersion,          // my channel version
+            sender,                     // the sender
+            quotedAmount                // the quoted amount
+        );
+
+        // Check valid
+        if (createTransactionResponse.error || !createTransactionResponse.result) {
+            console.error("Unable to create new transaction", createTransactionResponse);
+            return Promise.reject(createTransactionResponse);
+        }
+
+        // TODO send transaction from yourself to the recipient for quotedAmount
+
+        // Mark quote as fulfilled
+        const quoteFulfilled = await Quote.fulfillQuote(quote.id, sender);
+        console.info(`Quote [${quote.id}] fulfilled`, quoteFulfilled);
     }
 
     async sendMoneyBackToRecipient(incomingTransaction: Transaction) {

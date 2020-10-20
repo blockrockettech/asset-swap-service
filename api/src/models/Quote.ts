@@ -32,6 +32,16 @@ class Quote {
             VALUES('${quote_id}', '${channel_uuid}', '${input.smart_contract}', '${output.smart_contract}', '${input.value}', ${fee})
         `);
     }
+
+    async fulfillQuote(quote_id: string, sender: string) {
+        return this.client.query(`
+            UPDATE quote
+            SET fulfilled=true
+            SET fulfilled_recipient=${sender}
+            SET fulfilled_timestamp=NOW()
+            WHERE quote_id=${quote_id}
+        `);
+    }
 }
 
 export default Quote;
