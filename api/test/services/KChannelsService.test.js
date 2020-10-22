@@ -4,6 +4,8 @@ const {expect} = chai;
 
 const KChannelsService = require('../../src/services/KChannelsService');
 
+// Random init test for triggering the auth handler
+
 describe.skip('KChannelsService tests', async () => {
 
   describe('getAuthChallenge()', async () => {

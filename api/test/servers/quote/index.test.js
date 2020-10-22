@@ -2,6 +2,7 @@ import {sinon, server, QUOTE_URL, expect} from '../../setup';
 import {AssetSwapChannelState} from '../../../src/models';
 import quoteService from '../../../src/services/QuoteService';
 import {v4 as uuidv4} from 'uuid';
+import {DAI, XDAI} from '../../../src/types/coins';
 
 describe('Quote server tests', () => {
 
@@ -9,31 +10,21 @@ describe('Quote server tests', () => {
     sinon.restore();
   });
 
-  function generateQuote(payload) {
-    return server
-      .post(QUOTE_URL)
-      .send({
-        id: '1',
-        jsonrpc: '2.0',
-        method: 'generate_quote',
-        params: payload
-      });
-  }
-
-  describe.only('validation', async () => {
+  describe('validation', async () => {
 
     describe('pair validation', async () => {
-      it('fails when pair is not valid', (done) => {
+
+      it('fails when same pair supplied', (done) => {
         generateQuote({
           'channel_uuid': 'a0244043-649a-4c7f-9975-b68849bca434',
           'input': {
-            'smart_contract': '0xD62fB951A937e1f6afEEECf1a778c4A5ddeD791d',
-            'kind': 'Value',
+            'smart_contract': XDAI.smart_contract,
+            'chain_id': XDAI.chain_id,
             'value': '100000000000000000'
           },
           'output': {
-            'smart_contract': '0xD62fB951A937e1f6afEEECf1a778c4A5ddeD791d',
-            'kind': 'Value',
+            'smart_contract': XDAI.smart_contract,
+            'chain_id': XDAI.chain_id,
             'value': '100000000000000000'
           }
         })
@@ -47,19 +38,40 @@ describe('Quote server tests', () => {
             done();
           });
       });
+
       it('fails when pair is partial', (done) => {
         generateQuote({
           'channel_uuid': 'a0244043-649a-4c7f-9975-b68849bca434',
           'input': {
-            'smart_contract': '0xD62fB951A937e1f6afEEECf1a778c4A5ddeD791d',
-            'kind': 'Value',
+            'smart_contract': XDAI.smart_contract,
+            'chain_id': XDAI.chain_id,
             'value': '100000000000000000'
           },
           'output': {
             'smart_contract': '',
-            'kind': 'Value',
+            'chain_id': '',
             'value': '100000000000000000'
           }
+        })
+          .end((err, res) => {
+            if (err) return done(err);
+            expect(res.status).to.equal(200);
+            expect(res.body.error).to.be.deep.equal({
+              code: -32602,
+              message: 'Invalid pair'
+            });
+            done();
+          });
+      });
+
+      it('fails when pair is missing', (done) => {
+        generateQuote({
+          'channel_uuid': 'a0244043-649a-4c7f-9975-b68849bca434',
+          'input': {
+            'smart_contract': XDAI.smart_contract,
+            'chain_id': XDAI.chain_id,
+            'value': '100000000000000000'
+          },
         })
           .end((err, res) => {
             if (err) return done(err);
@@ -82,13 +94,13 @@ describe('Quote server tests', () => {
         generateQuote({
           'channel_uuid': 'a0244043-649a-4c7f-9975-b68849bca434',
           'input': {
-            'smart_contract': '0xD62fB951A937e1f6afEEECf1a778c4A5ddeD791d',
-            'kind': 'Value',
+            'smart_contract': XDAI.smart_contract,
+            'chain_id': XDAI.chain_id,
             'value': '100000000000000000'
           },
           'output': {
-            'smart_contract': '0x6b175474e89094c44da98b954eedeac495271d0f',
-            'kind': 'Value',
+            'smart_contract': DAI.smart_contract,
+            'chain_id': DAI.chain_id,
             'value': '100000000000000000'
           }
         })
@@ -119,13 +131,13 @@ describe('Quote server tests', () => {
         generateQuote({
           'channel_uuid': 'a0244043-649a-4c7f-9975-b68849bca434',
           'input': {
-            'smart_contract': '0xD62fB951A937e1f6afEEECf1a778c4A5ddeD791d',
-            'kind': 'Value',
+            'smart_contract': XDAI.smart_contract,
+            'chain_id': XDAI.chain_id,
             'value': '100000000000000000'
           },
           'output': {
-            'smart_contract': '0x6b175474e89094c44da98b954eedeac495271d0f',
-            'kind': 'Value',
+            'smart_contract': DAI.smart_contract,
+            'chain_id': DAI.chain_id,
             'value': '100000000000000000'
           }
         })
@@ -134,16 +146,16 @@ describe('Quote server tests', () => {
             expect(res.status).to.equal(200);
             expect(res.body.result).to.be.deep.equal({
               'fee': expectedQuote.fee,
-              'from': {
-                'kind': 'Value',
-                'smart_contract': '0xD62fB951A937e1f6afEEECf1a778c4A5ddeD791d',
+              'input': {
+                'smart_contract': XDAI.smart_contract,
+                'chain_id': XDAI.chain_id,
                 'value': '100000000000000000'
               },
               'quote_id': expectedQuote.quote_id,
               'success': true,
-              'to': {
-                'kind': 'Value',
-                'smart_contract': '0x6b175474e89094c44da98b954eedeac495271d0f',
+              'output': {
+                'smart_contract': DAI.smart_contract,
+                'chain_id': DAI.chain_id,
                 'value': '100000000000000000'
               },
               'totalPayable': '100000000000100000'
@@ -153,5 +165,17 @@ describe('Quote server tests', () => {
       });
     });
   });
+
+
+  function generateQuote(payload) {
+    return server
+      .post(QUOTE_URL)
+      .send({
+        id: '1',
+        jsonrpc: '2.0',
+        method: 'generate_quote',
+        params: payload
+      });
+  }
 
 });

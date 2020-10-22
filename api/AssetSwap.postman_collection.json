@@ -8,10 +8,27 @@
 		{
 			"name": "Get Quote",
 			"request": {
-				"method": "GET",
+				"method": "POST",
 				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"id\": 1,\n    \"jsonrpc\": \"2.0\",\n    \"method\": \"generate_quote\",\n    \"params\": {\n        \"channel_uuid\": \"a0244043-649a-4c7f-9975-b68849bca434\",\n        \"input\": {\n            \"smart_contract\": \"0x6b175474e89094c44da98b954eedeac495271d0f\",\n            \"chain_id\": \"1\"\n        },\n        \"output\": {\n            \"smart_contract\": \"0xD62fB951A937e1f6afEEECf1a778c4A5ddeD791d\",\n            \"chain_id\": \"100\",\n            \"value\": \"10000\"\n       }\n    }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
 				"url": {
-					"raw": ""
+					"raw": "http://localhost:3000/quote",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"quote"
+					]
 				}
 			},
 			"response": []

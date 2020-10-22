@@ -275,7 +275,6 @@ export function getTransactionDefinitionTypedMessage(message, primaryType, chain
         {name: "definition_version", type: "uint256"},
         {name: "reversal_nonce", type: "uint256"},
         {name: "external_tx_reference_list", type: "ExternalTxReference[]"}
-
     ];
 
     return {

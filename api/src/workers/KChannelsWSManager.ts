@@ -12,41 +12,7 @@ import {Account} from "web3-core";
 import {ChannelInfoWSManager} from "./ChannelInfoWSManager";
 import {AuthenticationSuccess, ChannelDefinition, ClientInfo} from "../types/kchannel";
 import {TransactionWSManager} from "./TransactionWSManager";
-
-const sigUtil = require('eth-sig-util');
-
-/*
-    --------------
-    -- stage 1. --
-    --------------
-
-    -- AUTH
-    1. request auth challenge
-    2. fulfill challenge
-    3. store success / JWT token (24 hr timeout)
-
-    -- Load channel info
-    4. request and store channel info
-
-    -- Setup quote fulfillment
-    5. store websocket subscribe to channel updates
-    6. quotes can now be fulfilled
-
-    --------------
-    -- stage 2. --
-    --------------
-
-    QUOTES CAN NOW BE ISSUED
-
-    --------------
-    -- stage 3. --
-    --------------
-
-    7. websocket watching transaction
-    8. transaction_status = COMPLETED (will include tx from myself) - recipient_party = me
-    9. Transaction.reference_data - quote field
-        - if no reference_data specified send the funds back
- */
+import {signTypedData_v4} from "../services/web3Signer";
 
 export class KChannelsWSManager {
 
@@ -93,6 +59,7 @@ export class KChannelsWSManager {
             jwt,
         }).start();
 
+        // TODO manage disconnect, reconnects, auth changes for both WS managers
     }
 
     async authenticateToKChannels(): Promise<AuthenticationSuccess> {
@@ -109,10 +76,7 @@ export class KChannelsWSManager {
         const authTypedParams = getAuthenticationTypedMessage(authChallenge);
 
         // Sign payload
-        const authTypedSignature = sigUtil.signTypedData_v4(
-            Buffer.from(this.web3Signer.privateKey.substr(2), 'hex'),
-            {data: authTypedParams}
-        );
+        const authTypedSignature = signTypedData_v4(this.web3Signer, authTypedParams);
 
         // FIXME store jwt and expiry
         const authResponse = await completeAuthChallenge(authChallenge, authTypedSignature);
@@ -126,10 +90,7 @@ export class KChannelsWSManager {
 
         // Sign definition and add as a signature
         const createChannelTypedParams = getChannelDefinitionTypedMessage(channelDef)
-        const createChannelTypedSignature = sigUtil.signTypedData_v4(
-            Buffer.from(this.web3Signer.privateKey.substr(2), 'hex'),
-            {data: createChannelTypedParams}
-        );
+        const createChannelTypedSignature = signTypedData_v4(this.web3Signer, createChannelTypedParams);
 
         // Append signature
         channelDef.signature_list = [createChannelTypedSignature];

@@ -1,6 +1,7 @@
 import {ChannelAsset, ChannelInfo} from "../types/kchannel";
 import {AssetSwapChannelState} from '../models';
 import {WebSocketSetup} from "../types/internal";
+import {DAI, XDAI} from "../types/coins";
 
 const _ = require('lodash');
 const WebSocket = require('ws');
@@ -46,18 +47,31 @@ export class ChannelInfoWSManager {
             // handle provision only at first for channel balances
             switch (message.channel_status) {
                 case 'Provisioned': {
+
                     console.log("Handle Provisioned channel state", rawData);
 
-                    // find any xDAi state updates
+                    // find any xDAI state updates
                     const xDaiState: ChannelAsset | null = _.find(message.channel_state.channel_asset_list, {
-                        "smart_contract": "0xD62fB951A937e1f6afEEECf1a778c4A5ddeD791d",
-                        "chain_id": "100"
+                        "smart_contract": XDAI.smart_contract,
+                        "chain_id": XDAI.chain_id
                     });
-                    console.log("xDaiState found", xDaiState);
                     if (xDaiState) {
+                        console.log("XDAI state found", xDaiState);
                         await AssetSwapChannelState.storeCurrentChannelState(channelUuid, message.channel_state.nonce, message.channel_state_hash, xDaiState)
                     }
+
+
+                    // find any DAI state updates
+                    const daiState: ChannelAsset | null = _.find(message.channel_state.channel_asset_list, {
+                        "smart_contract": DAI.smart_contract,
+                        "chain_id": DAI.chain_id
+                    });
+                    if (daiState) {
+                        console.log("DAI state found", daiState);
+                        await AssetSwapChannelState.storeCurrentChannelState(channelUuid, message.channel_state.nonce, message.channel_state_hash, daiState)
+                    }
                 }
+
                 // ignore all others for now
             }
         });

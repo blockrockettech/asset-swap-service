@@ -6,6 +6,22 @@ import {ethers} from "ethers";
 
 const {BigNumber} = ethers;
 
+/*
+Sample payload - output value and chain ids are needed on both
+{
+    "channel_uuid": "a0244043-649a-4c7f-9975-b68849bca434",
+    "input": {
+        "smart_contract": "0x6b175474e89094c44da98b954eedeac495271d0f",
+        "chain_id": "1"
+    },
+    "output": {
+        "smart_contract": "0xD62fB951A937e1f6afEEECf1a778c4A5ddeD791d",
+        "chain_id": "100",
+        "value": "10000"
+   }
+}
+ */
+
 export async function generate_quote(quoteRequest: QuoteRequest, callback) {
     console.log("generate_quote", quoteRequest);
 
@@ -25,7 +41,7 @@ export async function generate_quote(quoteRequest: QuoteRequest, callback) {
     const outgoingChannelBalance = await AssetSwapChannelState.getChannelBalance(output.smart_contract);
     console.log(`Found outbound channel balance of [${outgoingChannelBalance}] for [${output.smart_contract}]`);
 
-    const requestOutput = BigNumber.from(input.value);
+    const requestOutput = BigNumber.from(output.value);
 
     if (!outgoingChannelBalance || BigNumber.from(outgoingChannelBalance).lt(requestOutput)) {
         console.log(`Rejecting quote - asset swap balance to low`);
@@ -41,8 +57,8 @@ export async function generate_quote(quoteRequest: QuoteRequest, callback) {
     return callback(null, {
         success: true,
         quote_id,
-        from: input,
-        to: output,
+        input: input,
+        output: output,
         fee: BigNumber.from(fee).toString(),
         totalPayable: requestOutput.add(fee).toString()
     });

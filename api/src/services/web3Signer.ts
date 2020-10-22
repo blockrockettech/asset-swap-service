@@ -2,6 +2,8 @@ import Web3 from "web3";
 import {Account} from "web3-core";
 import {CHAIN_RPC} from "./KChannelsService";
 
+const sigUtil = require('eth-sig-util');
+
 interface SignerConfig {
     web3Signer: Account
     web3: Web3
@@ -22,4 +24,11 @@ export default function getWeb3Signer(): SignerConfig {
         web3Signer,
         web3
     };
+}
+
+export function signTypedData_v4(account: Account, authTypedParams) {
+    return sigUtil.signTypedData_v4(
+        Buffer.from(account.privateKey.substr(2), 'hex'),
+        {data: authTypedParams}
+    );
 }
