@@ -103,6 +103,8 @@ export class TransactionWSManager {
                     return this.sendBackToSender(transaction, reference_data);
                 }
 
+                // TODO check sender is the same as the requesting quote
+
                 // Check current channel balance is enough to satisfy the quote
                 const currentBalance = await AssetSwapChannelState.getChannelBalance(quote.output);
                 if (BigNumber.from(currentBalance).lt(totalPayable)) {
@@ -192,7 +194,9 @@ export class TransactionWSManager {
         const createTransaction = createTransactionResponse.result;
 
         // Copy reference_data back onto every field
-        createTransaction.reference_data = reference_data;
+        if (reference_data) {
+            createTransaction.reference_data = reference_data;
+        }
 
         // Build message definition
         const transactionMessage = await getTransactionDefinitionTypedMessage(createTransaction, "Transaction");
@@ -214,6 +218,9 @@ export class TransactionWSManager {
         // Check valid
         if (processTransactionResponse.error || !processTransactionResponse.result) {
             console.error("Unable to process transaction", processTransactionResponse);
+
+            // TODO deal with busy channel in some way ... ?
+
             return Promise.reject(processTransactionResponse);
         }
 
